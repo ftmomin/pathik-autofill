@@ -1,0 +1,403 @@
+/* Pathik Autofill — Settings page styles */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:           #0f0f11;
+  --sidebar-bg:   #17171a;
+  --card-bg:      #1c1c1f;
+  --border:       rgba(255, 255, 255, 0.08);
+  --text:         #f0f0f2;
+  --text-muted:   rgba(255, 255, 255, 0.42);
+  --accent:       #4f8ef7;
+  --accent-hover: #6ba3ff;
+  --danger:       #e05252;
+  --radius:       8px;
+  --font:         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+body { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ─────────────────────────────────────── */
+
+.sidebar {
+  width: 210px;
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 10px;
+  flex-shrink: 0;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 22px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.sidebar-logo img { border-radius: 6px; }
+
+.sidebar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font);
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+}
+
+.nav-item:hover  { background: rgba(255,255,255,0.05); color: var(--text); }
+.nav-item.active { background: rgba(79,142,247,0.13);  color: var(--accent); font-weight: 500; }
+
+.sidebar-version {
+  padding: 0 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ── Main content ────────────────────────────────── */
+
+.content {
+  flex: 1;
+  padding: 40px 48px;
+  max-width: 760px;
+  overflow-y: auto;
+}
+
+.tab { display: none; }
+.tab.active { display: block; }
+
+.tab-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+/* ── Cards ───────────────────────────────────────── */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 14px;
+}
+
+.card-header { margin-bottom: 16px; }
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ── Settings: Add site ──────────────────────────── */
+
+.add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.site-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.site-input:focus { border-color: var(--accent); }
+.site-input::placeholder { color: rgba(255,255,255,0.22); }
+
+/* ── Buttons ─────────────────────────────────────── */
+
+.btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 14px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-remove {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 400;
+  border-radius: 4px;
+}
+.btn-remove:hover { background: rgba(224,82,82,0.14); color: var(--danger); }
+
+/* ── Error message ───────────────────────────────── */
+
+.error-msg {
+  font-size: 12px;
+  color: var(--danger);
+  margin-bottom: 8px;
+  min-height: 16px;
+}
+.error-msg.hidden { visibility: hidden; }
+
+/* ── Sites list ──────────────────────────────────── */
+
+.sites-list {
+  list-style: none;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.site-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.site-domain {
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+  color: var(--text);
+}
+
+.sites-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* ── Code blocks ─────────────────────────────────── */
+
+.code-block {
+  background: rgba(0,0,0,0.38);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.code-block code {
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.75;
+  color: #a8d4ff;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+code {
+  background: rgba(255,255,255,0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+}
+
+/* ── Developer table ─────────────────────────────── */
+
+.table-wrap { overflow-x: auto; margin-top: 14px; }
+
+.dev-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dev-table th,
+.dev-table td {
+  padding: 9px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.dev-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.dev-table tr:last-child td { border-bottom: none; }
+
+/* ── Help steps ──────────────────────────────────── */
+
+.help-steps {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.help-steps li strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.help-steps li p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── FAQ ─────────────────────────────────────────── */
+
+.faq { margin-top: 10px; }
+
+.faq dt {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text);
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+.faq dt:first-child { margin-top: 0; }
+
+.faq dd {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-left: 0;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* ── Danger button ───────────────────────────────── */
+
+.btn-danger {
+  background: rgba(224, 82, 82, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(224, 82, 82, 0.3);
+}
+.btn-danger:hover { background: rgba(224, 82, 82, 0.25); }
+
+/* ── General tab: test data ──────────────────────── */
+
+.test-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.test-status {
+  font-size: 12px;
+  margin-bottom: 10px;
+  min-height: 16px;
+}
+.test-status.hidden  { display: none; }
+.test-status.success { color: #4ade80; }
+.test-status.error   { color: var(--danger); }
+
+.entries-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entry-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.entry-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.entry-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.no-entries {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 14px;
+}
