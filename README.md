@@ -1,0 +1,160 @@
+# Pathik Autofill
+
+A Chrome extension that auto-fills hotel guest registration forms on [pathik.guru](https://pathik.guru) (and any other configured site).
+
+Guest data is stored from your hotel management system via a simple JavaScript API, then recalled through a right-click context menu.
+
+---
+
+## Features
+
+- **Right-click → Autofill Form** — hover to see a submenu of saved guest entries
+- **Stores up to 5 entries** in a circular buffer (oldest overwritten automatically)
+- **Duplicate detection** — rejects entries with the same guest name + check-in date
+- **Works on any website** — fills any form field whose `name` attribute matches the data key
+- **Configurable allowed sites** — context menu populated from your allowed sites list
+- **Settings page** — manage allowed sites, load test data, developer guide, and help
+
+---
+
+## Installation
+
+1. Clone or download this repository
+2. Open Chrome and go to `chrome://extensions`
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked** and select the `pathik-autofill` folder
+5. The extension is now active
+
+> To open Settings: right-click the extension icon → **Options**
+
+---
+
+## Usage
+
+### 1 — Store guest data from your system
+
+Call `window.pathikAutofill` from any client component on an allowed site:
+
+```js
+try {
+  await window.pathikAutofill({
+    data: {
+      first_name: "Kajal",
+      last_name:  "Gangani",
+      email:      "guest@example.com",
+      mobile_no:  "9820355183",
+      phone_no:   "9820355183",
+      dob:        "05-05-1993",
+      address:    "123 Main St",
+      locality:   "Thane",
+      city:       "Thane",
+      district:   "Thane",
+      zip_code:   "400604",
+      country:    "india",
+      state:      "maharashtra",
+      coming_from:  "Thane",
+      going_to:     "Thane",
+      doc_type:   "aadhar card",
+      doc_no:     "270715127847",
+      room_no:    "306",
+      checkin_date:  "03-06-2023",
+      checkin_time:  "14:00",
+      checkout_date: "04-06-2023",
+      checkout_time: "12:00",
+      child:  0,
+      adult:  2,
+      vehicle_type: "Other",
+      vehicle_registration_no: "",
+      other_guests: [
+        {
+          other_full_name:       "Bhavesh Tank",
+          other_mobile_number:   "9820355183",
+          other_doc_type:        "aadhar card",
+          other_document_number: "958952493001"
+        }
+      ]
+    }
+  });
+} catch (err) {
+  if (err.message === "data exist") {
+    // same name + check-in date already stored
+  }
+}
+```
+
+### 2 — Fill the form
+
+1. Navigate to pathik.guru (or any allowed site)
+2. **Right-click** anywhere on the page
+3. Hover over **Autofill Form**
+4. Click a guest entry from the submenu
+5. All matching form fields are filled automatically
+
+---
+
+## API Reference
+
+### `window.pathikAutofill({ data })`
+
+| Outcome | Result |
+|---|---|
+| Entry saved | `Promise` resolves `{ success: true }` |
+| Duplicate (same name + check-in date) | `Promise` rejects `Error("data exist")` |
+| Timeout after 10 s | `Promise` rejects `Error("Pathik Autofill: request timed out")` |
+
+**Storage:** Up to 5 entries in `chrome.storage.local`. The 6th entry overwrites the oldest.
+
+**Duplicate check:** compares `first_name + last_name + checkin_date` (case-insensitive).
+
+**Form filling:** Each data key is matched to a form input by its `name` attribute (`[name="key"]`), then by `id`. Works on any website, not just pathik.guru.
+
+---
+
+## Settings Page
+
+Open via: right-click extension icon → **Options**
+
+| Tab | Description |
+|---|---|
+| **General** | Load sample test data / clear all entries |
+| **Settings** | Add or remove allowed websites |
+| **Developer Guide** | Full API usage example and return value table |
+| **Help** | Step-by-step usage guide and troubleshooting FAQ |
+
+---
+
+## File Structure
+
+```
+pathik-autofill/
+├── manifest.json        # Chrome MV3 manifest
+├── background.js        # Service worker — storage, context menu, circular buffer
+├── injected.js          # MAIN world — exposes window.pathikAutofill()
+├── content.js           # ISOLATED world — bridges API calls, fills form fields
+├── styles.css           # Toast notification styles
+├── options.html         # Settings page
+├── options.js           # Settings page logic
+├── options.css          # Settings page styles
+└── icons/
+    ├── icon16.png
+    ├── icon48.png
+    └── icon128.png
+```
+
+---
+
+## Development
+
+**Regenerate icons** (requires Node.js):
+```bash
+node generate_icons.js
+```
+
+**Reload extension after changes:**
+Go to `chrome://extensions` → click the reload ↺ icon on Pathik Autofill, then refresh any open tabs you want to test on.
+
+---
+
+## License
+
+MIT
