@@ -15,7 +15,7 @@
 
     pendingRequests.delete(id);
     if (success) {
-      pending.resolve({ success: true });
+      pending.resolve(event.data);
     } else {
       pending.reject(new Error(error ?? "Unknown error"));
     }
@@ -53,5 +53,26 @@
     });
   };
 
+  window.pathikAutofill.getEntries = function () {
+    return new Promise((resolve, reject) => {
+      const id = `pathik_${++_counter}_${Date.now()}`;
+      const timer = setTimeout(() => {
+        if (pendingRequests.has(id)) {
+          pendingRequests.delete(id);
+          reject(new Error("Pathik Autofill: getEntries timed out"));
+        }
+      }, 5000);
+      pendingRequests.set(id, {
+        resolve: (v) => { clearTimeout(timer); resolve(v); },
+        reject:  (e) => { clearTimeout(timer); reject(e); },
+      });
+      window.postMessage(
+        { source: "PATHIK_INJECTED_TO_CS", type: "GET_ENTRIES", id },
+        location.origin
+      );
+    });
+  };
+
   window.pathikAutofill.version = "1.0.0";
+  window.pathikAutofill.isInstalled = true;
 })();

@@ -93,7 +93,8 @@ function normalizeDomain(raw) {
     .toLowerCase()
     .replace(/^https?:\/\//, "")
     .replace(/^www\./, "")
-    .replace(/\/.*$/, "");
+    .replace(/\/.*$/, "")
+    .replace(/:\d+$/, ""); // strip port (e.g. localhost:5000 → localhost)
 }
 
 async function handleAddSite() {
@@ -101,8 +102,8 @@ async function handleAddSite() {
   if (!raw) { showError("Please enter a domain."); return; }
 
   const domain = normalizeDomain(raw);
-  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(domain)) {
-    showError("Enter a valid domain (e.g. pathik.guru).");
+  if (!/^(localhost|[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,})$/.test(domain)) {
+    showError("Enter a valid domain (e.g. pathik.guru or localhost).");
     return;
   }
 

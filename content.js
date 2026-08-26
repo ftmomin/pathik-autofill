@@ -9,6 +9,27 @@ window.addEventListener("message", async (event) => {
   if (event.data?.source !== "PATHIK_INJECTED_TO_CS") return;
 
   const { type, id, data } = event.data;
+
+  if (type === "GET_ENTRIES") {
+    let response;
+    try {
+      response = await chrome.runtime.sendMessage({ type: "GET_ENTRIES" });
+    } catch (err) {
+      response = { error: err.message };
+    }
+    window.postMessage(
+      {
+        source: "PATHIK_CS_TO_INJECTED",
+        id,
+        success: !response?.error,
+        entries: response?.entries ?? [],
+        error: response?.error ?? null,
+      },
+      location.origin
+    );
+    return;
+  }
+
   if (type !== "SAVE_ENTRY") return;
 
   // Reject save if any value doesn't match the actual page select options

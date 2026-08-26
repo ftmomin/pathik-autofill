@@ -1,7 +1,7 @@
 const STORAGE_KEY   = "pathik_entries";
 const SITES_KEY     = "pathik_allowed_sites";
 const MAX_ENTRIES   = 5;
-const DEFAULT_SITES = ["pathik.guru"];
+const DEFAULT_SITES = ["pathik.guru", "localhost"];
 const PARENT_ID     = "pathik_autofill";
 const ENTRY_PREFIX  = "pathik_entry_";
 
