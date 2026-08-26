@@ -11,6 +11,21 @@ window.addEventListener("message", async (event) => {
   const { type, id, data } = event.data;
   if (type !== "SAVE_ENTRY") return;
 
+  // Reject save if any value doesn't match the actual page select options
+  const invalid = invalidSelectField(data);
+  if (invalid) {
+    window.postMessage(
+      {
+        source: "PATHIK_CS_TO_INJECTED",
+        id,
+        success: false,
+        error: `"${invalid.value}" is not a valid option for "${invalid.field}"`,
+      },
+      location.origin
+    );
+    return;
+  }
+
   let response;
   try {
     response = await chrome.runtime.sendMessage({ type: "SAVE_ENTRY", data });
@@ -42,19 +57,61 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // Keys that are internal / non-form fields — skip when filling
 const SKIP_KEYS = new Set(["other_guests", "action", "_savedAt"]);
 
+// Returns { field, value } if any data key maps to a <select> on the page
+// and the supplied value isn't a valid option; otherwise returns null.
+function invalidSelectField(data) {
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined || value === null || value === "") continue;
+    const el = document.querySelector(`[name="${key}"]`);
+    if (!el || el.tagName.toLowerCase() !== "select") continue;
+    const val = String(value).toLowerCase().trim();
+    const ok = Array.from(el.options).some(
+      (o) => o.value.toLowerCase() === val || o.text.toLowerCase().trim() === val
+    );
+    if (!ok) return { field: key, value };
+  }
+  return null;
+}
+
 function fillField(el, value) {
   if (!el || value === undefined || value === null) return false;
 
   const tag = el.tagName.toLowerCase();
 
   if (tag === "select") {
-    const val = String(value).toLowerCase();
+    const val = String(value).toLowerCase().trim();
     const match = Array.from(el.options).find(
-      (o) => o.value.toLowerCase() === val || o.text.toLowerCase() === val
+      (o) => o.value.toLowerCase() === val || o.text.toLowerCase().trim() === val
     );
     if (!match) return false;
+
+    // Bootstrap Select: if the custom <a> items are in the DOM, click the
+    // matching one — BS handles setting the native value and firing change.
+    const bsWrapper = el.closest(".bootstrap-select");
+    if (bsWrapper) {
+      const matchText = match.text.toLowerCase().trim();
+      const optEl = Array.from(
+        bsWrapper.querySelectorAll('.dropdown-menu a[role="option"]')
+      ).find((a) => {
+        const text = (a.querySelector(".text")?.textContent ?? a.textContent)
+          .trim()
+          .toLowerCase();
+        return text === val || text === matchText;
+      });
+      if (optEl) {
+        optEl.click();
+        return true;
+      }
+    }
+
+    // Fallback for non-BS selects or BS with un-rendered dropdown items.
+    // Only fire change when the value actually changed; avoids triggering
+    // cascade AJAX (e.g. country → state reload) when already correct.
+    const prev = el.value;
     el.value = match.value;
-    el.dispatchEvent(new Event("change", { bubbles: true }));
+    if (el.value !== prev) {
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
     return true;
   }
 
