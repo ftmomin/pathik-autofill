@@ -68,15 +68,49 @@ window.addEventListener("message", async (event) => {
 // Fill form when user picks an entry from the context submenu
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "FILL_FORM") {
-    const count = fillForm(message.entry);
-    showToast(`Filled ${count} field${count !== 1 ? "s" : ""}`);
-    sendResponse({ ok: true });
+    fillForm(message.entry).then((count) => {
+      showToast(`Filled ${count} field${count !== 1 ? "s" : ""}`);
+      sendResponse({ ok: true });
+    });
+    return true; // keep channel open for async response
   }
   return false;
 });
 
 // Keys that are internal / non-form fields — skip when filling
 const SKIP_KEYS = new Set(["other_guests", "action", "_savedAt"]);
+
+// Fields whose options load lazily on click — click first, wait, then fill
+const LAZY_FIELDS = new Set(["country", "state", "doc_type"]);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Click the visible control to trigger lazy option loading
+function triggerOpen(el) {
+  const bsWrapper = el.closest(".bootstrap-select");
+  if (bsWrapper) {
+    const btn = bsWrapper.querySelector("button.dropdown-toggle");
+    if (btn) { btn.click(); return; }
+  }
+  el.click();
+  el.dispatchEvent(new Event("focus", { bubbles: true }));
+}
+
+// Click the first real item in the dropdown (to activate any lazy-load JS)
+function selectFirstOption(el) {
+  const bsWrapper = el.closest(".bootstrap-select");
+  if (bsWrapper) {
+    const first = bsWrapper.querySelector('.dropdown-menu a[role="option"]');
+    if (first) { first.click(); return; }
+  }
+  const first = Array.from(el.options).find((o) => o.value !== "");
+  if (first) {
+    el.value = first.value;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
 
 // Returns { field, value } if any data key maps to a <select> on the page
 // and the supplied value isn't a valid option; otherwise returns null.
@@ -156,8 +190,9 @@ function queryAny(...selectors) {
   return null;
 }
 
-function fillForm(data) {
+async function fillForm(data) {
   let filled = 0;
+  const lazy = []; // [el, value] pairs deferred for lazy fields
 
   for (const [key, value] of Object.entries(data)) {
     if (SKIP_KEYS.has(key)) continue;
@@ -165,7 +200,23 @@ function fillForm(data) {
 
     // Match by name attribute (primary), then by id
     const el = queryAny(`[name="${key}"]`, `#${key}`);
-    if (el && fillField(el, value)) filled++;
+    if (!el) continue;
+
+    if (LAZY_FIELDS.has(key)) {
+      // Click to trigger option loading, fill after 1 s
+      triggerOpen(el);
+      lazy.push([el, value]);
+    } else {
+      if (fillField(el, value)) filled++;
+    }
+  }
+
+  if (lazy.length) {
+    await sleep(1000);
+    for (const [el, value] of lazy) {
+      selectFirstOption(el);
+      if (fillField(el, value)) filled++;
+    }
   }
 
   // Additional guest rows — field names use a _N suffix or bracket notation
