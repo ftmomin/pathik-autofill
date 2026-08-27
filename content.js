@@ -191,6 +191,17 @@ function triggerClose(el) {
   document.body.click();
 }
 
+// Poll for the first visible dropdown option, up to `timeout` ms
+async function waitForFirstOption(container, timeout = 2000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const item = container.querySelector('.dropdown-menu a[role="option"]:not(.disabled)');
+    if (item) return item;
+    await sleep(200);
+  }
+  return null;
+}
+
 // Open dropdown, type value into its search input, then click the first result
 // if the filtered list has items; otherwise close the dropdown.
 async function fillLazyField(el, value) {
@@ -213,9 +224,7 @@ async function fillLazyField(el, value) {
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
     searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
 
-    await sleep(500);
-
-    const firstItem = container.querySelector('.dropdown-menu a[role="option"]:not(.disabled)');
+    const firstItem = await waitForFirstOption(container);
     if (firstItem) {
       firstItem.click();
     } else {
@@ -260,6 +269,8 @@ async function fillForm(data) {
     const [el, value] = lazyMap.get(key);
     await fillLazyField(el, value);
     filled++;
+    // After country selects, wait for the state AJAX to finish loading
+    if (key === 'country') await sleep(1500);
   }
 
   // Additional guest rows — field names use a _N suffix or bracket notation
