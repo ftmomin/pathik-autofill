@@ -177,10 +177,15 @@ function triggerClose(el) {
   const bsWrapper = el.closest('.bootstrap-select');
   if (bsWrapper) {
     const btn = bsWrapper.querySelector('button.dropdown-toggle');
-    if (btn && bsWrapper.classList.contains('open')) { btn.click(); return; }
+    const isOpen = bsWrapper.classList.contains('open') || bsWrapper.classList.contains('show');
+    if (btn && isOpen) { btn.click(); return; }
   }
-  el.blur();
-  el.dispatchEvent(new Event('blur', { bubbles: true }));
+  // Escape key on the focused element closes most dropdown libraries
+  document.activeElement?.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }),
+  );
+  // Final fallback: click outside to dismiss
+  document.body.click();
 }
 
 // Open dropdown, type value into its search input, then click the first result
