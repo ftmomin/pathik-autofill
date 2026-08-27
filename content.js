@@ -83,6 +83,9 @@ const SKIP_KEYS = new Set(['other_guests', 'action', '_savedAt']);
 // Fields whose options load lazily on click — click first, wait, then fill
 const LAZY_FIELDS = new Set(['country', 'state', 'doc_type']);
 
+// Processing order for lazy fields: state depends on country being selected first
+const LAZY_ORDER = ['country', 'state', 'doc_type'];
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -234,7 +237,7 @@ function queryAny(...selectors) {
 
 async function fillForm(data) {
   let filled = 0;
-  const lazy = []; // [el, value] pairs deferred for lazy fields
+  const lazyMap = new Map(); // key → [el, value]
 
   for (const [key, value] of Object.entries(data)) {
     if (SKIP_KEYS.has(key)) continue;
@@ -245,13 +248,16 @@ async function fillForm(data) {
     if (!el) continue;
 
     if (LAZY_FIELDS.has(key)) {
-      lazy.push([el, value]);
+      lazyMap.set(key, [el, value]);
     } else {
       if (fillField(el, value)) filled++;
     }
   }
 
-  for (const [el, value] of lazy) {
+  // Process in dependency order: country must be selected before state loads
+  for (const key of LAZY_ORDER) {
+    if (!lazyMap.has(key)) continue;
+    const [el, value] = lazyMap.get(key);
     await fillLazyField(el, value);
     filled++;
   }
