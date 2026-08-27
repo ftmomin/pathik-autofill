@@ -191,12 +191,18 @@ function triggerClose(el) {
   document.body.click();
 }
 
-// Poll for the first visible dropdown option, up to `timeout` ms
+// Poll for the first visible (not filtered-out) dropdown option, up to `timeout` ms.
+// Bootstrap Select hides non-matching <li> elements when live-search filters — we must
+// skip those hidden items and only return a truly visible option.
 async function waitForFirstOption(container, timeout = 2000) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    const item = container.querySelector('.dropdown-menu a[role="option"]:not(.disabled)');
-    if (item) return item;
+    const items = container.querySelectorAll('.dropdown-menu a[role="option"]:not(.disabled)');
+    const visible = Array.from(items).find((a) => {
+      const li = a.closest('li');
+      return li && li.style.display !== 'none' && !li.classList.contains('d-none') && !li.classList.contains('hidden');
+    });
+    if (visible) return visible;
     await sleep(200);
   }
   return null;
