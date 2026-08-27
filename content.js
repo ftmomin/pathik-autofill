@@ -87,7 +87,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Click the visible control to trigger lazy option loading
+// Click the visible control to open the dropdown
 function triggerOpen(el) {
   const bsWrapper = el.closest(".bootstrap-select");
   if (bsWrapper) {
@@ -98,17 +98,33 @@ function triggerOpen(el) {
   el.dispatchEvent(new Event("focus", { bubbles: true }));
 }
 
-// Click the first real item in the dropdown (to activate any lazy-load JS)
-function selectFirstOption(el) {
+// Open dropdown, type value into its search input, then click the first result
+async function fillLazyField(el, value) {
+  triggerOpen(el);
+  await sleep(1000);
+
+  const str = String(value);
   const bsWrapper = el.closest(".bootstrap-select");
-  if (bsWrapper) {
-    const first = bsWrapper.querySelector('.dropdown-menu a[role="option"]');
-    if (first) { first.click(); return; }
-  }
-  const first = Array.from(el.options).find((o) => o.value !== "");
-  if (first) {
-    el.value = first.value;
-    el.dispatchEvent(new Event("change", { bubbles: true }));
+  const container = bsWrapper ?? el.parentElement;
+
+  const searchInput = container.querySelector(
+    '.bs-searchbox input, .select2-search__field, input[type="search"]'
+  );
+
+  if (searchInput) {
+    searchInput.focus();
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    if (setter) setter.call(searchInput, str);
+    else searchInput.value = str;
+    searchInput.dispatchEvent(new Event("input",  { bubbles: true }));
+    searchInput.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
+
+    await sleep(500);
+
+    const firstItem = container.querySelector('.dropdown-menu a[role="option"]:not(.disabled)');
+    if (firstItem) firstItem.click();
+  } else {
+    fillField(el, value);
   }
 }
 
@@ -211,12 +227,9 @@ async function fillForm(data) {
     }
   }
 
-  if (lazy.length) {
-    await sleep(1000);
-    for (const [el, value] of lazy) {
-      selectFirstOption(el);
-      if (fillField(el, value)) filled++;
-    }
+  for (const [el, value] of lazy) {
+    await fillLazyField(el, value);
+    filled++;
   }
 
   // Additional guest rows — field names use a _N suffix or bracket notation
