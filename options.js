@@ -206,6 +206,22 @@ function showTestStatus(msg, isError = false) {
   }, 3500);
 }
 
+const FIELD_LABELS = {
+  first_name: "First Name",      last_name: "Last Name",
+  email: "Email",                mobile_no: "Mobile",
+  phone_no: "Phone",             dob: "Date of Birth",
+  address: "Address",            locality: "Locality",
+  city: "City",                  district: "District",
+  zip_code: "ZIP Code",          country: "Country",
+  state: "State",                coming_from: "Coming From",
+  going_to: "Going To",         doc_type: "Document Type",
+  doc_no: "Document No.",        room_no: "Room No.",
+  checkin_date: "Check-in Date", checkin_time: "Check-in Time",
+  checkout_date: "Check-out Date", checkout_time: "Check-out Time",
+  child: "Children",             adult: "Adults",
+  vehicle_type: "Vehicle Type",  vehicle_registration_no: "Vehicle Reg. No.",
+};
+
 async function renderEntries() {
   const r = await chrome.storage.local.get(STORAGE_KEY);
   const state = r[STORAGE_KEY] ?? { buffer: [], head: 0, count: 0 };
@@ -216,21 +232,78 @@ async function renderEntries() {
     return;
   }
 
-  const rows = [];
+  const label = document.createElement("p");
+  label.className = "entries-label";
+  label.textContent = `Stored entries (${count}/5):`;
+
+  const listEl = document.createElement("div");
+  listEl.className = "entries-list";
+
   for (let i = 0; i < count; i++) {
     const idx   = (head - count + i + MAX_ENTRIES) % MAX_ENTRIES;
     const entry = buffer[idx];
     const name  = [entry.first_name, entry.last_name].filter(Boolean).join(" ") || "—";
-    rows.push(`
-      <div class="entry-row">
-        <span class="entry-name">${escapeHtml(name)}</span>
-        <span class="entry-date">Check-in: ${escapeHtml(entry.checkin_date ?? "—")}</span>
-      </div>`);
+
+    const card = document.createElement("div");
+    card.className = "entry-card";
+
+    const row = document.createElement("div");
+    row.className = "entry-row";
+    row.innerHTML = `
+      <span class="entry-name">${escapeHtml(name)}</span>
+      <span class="entry-date">Check-in: ${escapeHtml(entry.checkin_date ?? "—")}</span>
+      <span class="entry-chevron">›</span>`;
+
+    const details = document.createElement("div");
+    details.className = "entry-details";
+
+    const fieldsEl = document.createElement("div");
+    fieldsEl.className = "entry-fields";
+
+    for (const [key, fieldLabel] of Object.entries(FIELD_LABELS)) {
+      const val = entry[key];
+      if (val === undefined || val === null || val === "") continue;
+      const f = document.createElement("div");
+      f.className = "entry-field";
+      f.innerHTML = `<span class="field-label">${escapeHtml(fieldLabel)}</span><span class="field-value">${escapeHtml(String(val))}</span>`;
+      fieldsEl.appendChild(f);
+    }
+
+    if (Array.isArray(entry.other_guests) && entry.other_guests.length > 0) {
+      const ogSection = document.createElement("div");
+      ogSection.className = "entry-other-guests";
+      ogSection.innerHTML = `<span class="other-guests-label">Other Guests</span>`;
+      entry.other_guests.forEach((og) => {
+        const ogEl = document.createElement("div");
+        ogEl.className = "other-guest";
+        [["Name", og.other_full_name], ["Mobile", og.other_mobile_number],
+         ["Doc Type", og.other_doc_type], ["Doc No.", og.other_document_number]]
+          .filter(([, v]) => v)
+          .forEach(([l, v]) => {
+            const f = document.createElement("div");
+            f.className = "entry-field";
+            f.innerHTML = `<span class="field-label">${escapeHtml(l)}</span><span class="field-value">${escapeHtml(v)}</span>`;
+            ogEl.appendChild(f);
+          });
+        ogSection.appendChild(ogEl);
+      });
+      fieldsEl.appendChild(ogSection);
+    }
+
+    details.appendChild(fieldsEl);
+
+    row.addEventListener("click", () => {
+      card.classList.toggle("expanded");
+    });
+
+    card.appendChild(row);
+    card.appendChild(details);
+    listEl.appendChild(card);
   }
 
-  entriesDiv.innerHTML = `
-    <p class="entries-label">Stored entries (${count}/5):</p>
-    <div class="entries-list">${rows.join("")}</div>`;
+  entriesDiv.innerHTML = "";
+  entriesDiv.appendChild(label);
+  entriesDiv.appendChild(listEl);
 }
 
 loadBtn.addEventListener("click", async () => {
