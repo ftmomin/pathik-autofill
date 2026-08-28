@@ -191,18 +191,27 @@ function triggerClose(el) {
   document.body.click();
 }
 
-// Poll for the first visible (not filtered-out) dropdown option, up to `timeout` ms.
+// Poll for the best visible (not filtered-out) dropdown option, up to `timeout` ms.
+// When `value` is provided, prefers exact match > starts-with match > first visible.
 // Bootstrap Select hides non-matching <li> elements when live-search filters — we must
 // skip those hidden items and only return a truly visible option.
-async function waitForFirstOption(container, timeout = 2000) {
+async function waitForFirstOption(container, timeout = 2000, value = '') {
   const deadline = Date.now() + timeout;
+  const needle = value.trim().toLowerCase();
   while (Date.now() < deadline) {
     const items = container.querySelectorAll('.dropdown-menu a[role="option"]:not(.disabled)');
-    const visible = Array.from(items).find((a) => {
+    const visible = Array.from(items).filter((a) => {
       const li = a.closest('li');
       return li && li.style.display !== 'none' && !li.classList.contains('d-none') && !li.classList.contains('hidden');
     });
-    if (visible) return visible;
+    if (visible.length > 0) {
+      if (!needle) return visible[0];
+      const getText = (a) => (a.querySelector('.text')?.textContent ?? a.textContent).trim().toLowerCase();
+      const exact = visible.find((a) => getText(a) === needle);
+      if (exact) return exact;
+      const startsWith = visible.find((a) => getText(a).startsWith(needle));
+      return startsWith ?? visible[0];
+    }
     await sleep(200);
   }
   return null;
@@ -230,7 +239,7 @@ async function fillLazyField(el, value) {
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
     searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
 
-    const firstItem = await waitForFirstOption(container);
+    const firstItem = await waitForFirstOption(container, 2000, str);
     if (firstItem) {
       firstItem.click();
     } else {
