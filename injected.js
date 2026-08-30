@@ -29,7 +29,7 @@
       const timer = setTimeout(() => {
         if (pendingRequests.has(id)) {
           pendingRequests.delete(id);
-          reject(new Error("Form Autofill: request timed out"));
+          reject(new Error("Form FillBridge: request timed out"));
         }
       }, 10000);
 
@@ -59,7 +59,7 @@
       const timer = setTimeout(() => {
         if (pendingRequests.has(id)) {
           pendingRequests.delete(id);
-          reject(new Error("Form Autofill: getEntries timed out"));
+          reject(new Error("Form FillBridge: getEntries timed out"));
         }
       }, 5000);
       pendingRequests.set(id, {

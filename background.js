@@ -78,7 +78,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
       await chrome.tabs.sendMessage(tab.id, { type: "FILL_FORM", entry });
     } catch (err) {
-      console.error("Form Autofill: could not reach content script", err);
+      console.error("Form FillBridge: could not reach content script", err);
     }
   }
 });

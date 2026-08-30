@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Form Autofill",
+  "name": "Form FillBridge",
   "version": "1.0.0",
   "description": "Auto-fill guest registration forms on pathik.guru. Manage allowed sites in settings.",
   "permissions": ["storage", "contextMenus", "activeTab", "scripting"],
@@ -38,6 +38,6 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "Open Form Autofill Settings"
+    "default_title": "Open Form FillBridge Settings"
   }
 }
