@@ -1,4 +1,4 @@
-# Pathik Autofill
+# Form Autofill
 
 A Chrome extension that auto-fills hotel guest registration forms on [pathik.guru](https://pathik.guru) (and any other configured site).
 
@@ -8,12 +8,15 @@ Guest data is stored from your hotel management system via a simple JavaScript A
 
 ## Features
 
-- **Right-click → Autofill Form** — hover to see a submenu of saved guest entries
+- **Right-click → Autofill Form** — hover to see a submenu of saved guest entries (newest first)
 - **Stores up to 5 entries** in a circular buffer (oldest overwritten automatically)
 - **Duplicate detection** — rejects entries with the same guest name + check-in date
+- **Lazy-loaded dropdown support** — handles Bootstrap Select dropdowns for `country`, `state`, and `doc_type` with search-based selection and proper dependency ordering (country fills before state loads)
+- **Select validation** — checks dropdown values against actual `<select>` options on the page before saving, returning a clear error if invalid
 - **Works on any website** — fills any form field whose `name` attribute matches the data key
-- **Configurable allowed sites** — context menu populated from your allowed sites list
-- **Settings page** — manage allowed sites, load test data, developer guide, and help
+- **Configurable allowed sites** — includes `pathik.guru` and `localhost` by default
+- **Extension detection API** — check if the extension is installed via `window.formAutofill.isInstalled`
+- **Settings page** — manage allowed sites, preview stored entries, load test data, developer guide, and help
 
 ---
 
@@ -33,11 +36,11 @@ Guest data is stored from your hotel management system via a simple JavaScript A
 
 ### 1 — Store guest data from your system
 
-Call `window.pathikAutofill` from any client component on an allowed site:
+Call `window.formAutofill` from any client component on an allowed site:
 
 ```js
 try {
-  await window.pathikAutofill({
+  await window.formAutofill({
     data: {
       first_name: "Kajal",
       last_name:  "Gangani",
@@ -79,6 +82,9 @@ try {
   if (err.message === "data exist") {
     // same name + check-in date already stored
   }
+  if (err.message.includes("not a valid option")) {
+    // a select field value didn't match any option on the page
+  }
 }
 ```
 
@@ -94,19 +100,56 @@ try {
 
 ## API Reference
 
-### `window.pathikAutofill({ data })`
+### `window.formAutofill({ data })`
+
+Saves a guest entry. Returns a Promise.
 
 | Outcome | Result |
 |---|---|
 | Entry saved | `Promise` resolves `{ success: true }` |
 | Duplicate (same name + check-in date) | `Promise` rejects `Error("data exist")` |
-| Timeout after 10 s | `Promise` rejects `Error("Pathik Autofill: request timed out")` |
+| Select value not in page options | `Promise` rejects `Error('"value" is not a valid option for "field"')` |
+| Timeout after 10 s | `Promise` rejects `Error("Form Autofill: request timed out")` |
 
-**Storage:** Up to 5 entries in `chrome.storage.local`. The 6th entry overwrites the oldest.
+### `window.formAutofill.getEntries()`
+
+Retrieves all currently stored entries. Returns a Promise.
+
+```js
+const { entries } = await window.formAutofill.getEntries();
+// entries: array of guest objects, oldest first
+```
+
+| Outcome | Result |
+|---|---|
+| Success | `Promise` resolves `{ entries: [...] }` |
+| Timeout after 5 s | `Promise` rejects `Error("Form Autofill: getEntries timed out")` |
+
+### Detection properties
+
+```js
+if (window.formAutofill?.isInstalled) {
+  // extension is active
+}
+console.log(window.formAutofill.version); // "1.0.0"
+```
+
+| Property | Value |
+|---|---|
+| `window.formAutofill.isInstalled` | `true` |
+| `window.formAutofill.version` | `"1.0.0"` |
+
+---
+
+## Storage
+
+**Capacity:** Up to 5 entries in `chrome.storage.local`. The 6th entry overwrites the oldest (circular buffer).
 
 **Duplicate check:** compares `first_name + last_name + checkin_date` (case-insensitive).
 
 **Form filling:** Each data key is matched to a form input by its `name` attribute (`[name="key"]`), then by `id`. Works on any website, not just pathik.guru.
+
+**Lazy-loaded dropdowns:** `country`, `state`, and `doc_type` are filled via search-based dropdown interaction to handle Bootstrap Select widgets. `country` is always filled before `state` so that state options load correctly from the AJAX cascade.
 
 ---
 
@@ -116,10 +159,14 @@ Open via: right-click extension icon → **Options**
 
 | Tab | Description |
 |---|---|
-| **General** | Load sample test data / clear all entries |
-| **Settings** | Add or remove allowed websites |
-| **Developer Guide** | Full API usage example and return value table |
+| **General** | Preview stored entries as expandable cards; load 3 sample guests or clear all entries |
+| **Settings** | Add or remove allowed websites (supports `localhost` and any valid domain) |
+| **Developer Guide** | Full API usage example, `getEntries()` docs, return value table, and storage behaviour |
 | **Help** | Step-by-step usage guide and troubleshooting FAQ |
+
+### Entry cards
+
+The General tab renders each stored entry as a collapsible card showing the guest name and check-in date. Click a card to expand it and view all stored fields, including any additional guests.
 
 ---
 
@@ -129,11 +176,11 @@ Open via: right-click extension icon → **Options**
 pathik-autofill/
 ├── manifest.json        # Chrome MV3 manifest
 ├── background.js        # Service worker — storage, context menu, circular buffer
-├── injected.js          # MAIN world — exposes window.pathikAutofill()
-├── content.js           # ISOLATED world — bridges API calls, fills form fields
+├── injected.js          # MAIN world — exposes window.formAutofill() and .getEntries()
+├── content.js           # ISOLATED world — bridges API calls, validates selects, fills form fields
 ├── styles.css           # Toast notification styles
-├── options.html         # Settings page
-├── options.js           # Settings page logic
+├── options.html         # Settings page markup (General, Settings, Developer Guide, Help tabs)
+├── options.js           # Settings page logic — site management, entry cards, test data
 ├── options.css          # Settings page styles
 └── icons/
     ├── icon16.png
@@ -151,7 +198,9 @@ node generate_icons.js
 ```
 
 **Reload extension after changes:**
-Go to `chrome://extensions` → click the reload ↺ icon on Pathik Autofill, then refresh any open tabs you want to test on.
+Go to `chrome://extensions` → click the reload ↺ icon on Form Autofill, then refresh any open tabs you want to test on.
+
+**Test without a PMS:** Open **Options → General** and click **Load Sample Data** to populate 3 sample guest entries (Kajal Gangani, Ravi Sharma, Priya Patel) directly in storage.
 
 ---
 

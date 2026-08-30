@@ -1,12 +1,12 @@
 // Runs in ISOLATED world
 // Responsibilities:
-//   1. Bridge window.pathikAutofill() calls → background storage
+//   1. Bridge window.formAutofill() calls → background storage
 //   2. Fill form fields when background sends FILL_FORM after a submenu click
 
 // Bridge: injected.js (MAIN world) → background.js
 window.addEventListener('message', async (event) => {
   if (event.source !== window) return;
-  if (event.data?.source !== 'PATHIK_INJECTED_TO_CS') return;
+  if (event.data?.source !== 'FA_INJECTED_TO_CS') return;
 
   const { type, id, data } = event.data;
 
@@ -19,7 +19,7 @@ window.addEventListener('message', async (event) => {
     }
     window.postMessage(
       {
-        source: 'PATHIK_CS_TO_INJECTED',
+        source: 'FA_CS_TO_INJECTED',
         id,
         success: !response?.error,
         entries: response?.entries ?? [],
@@ -37,7 +37,7 @@ window.addEventListener('message', async (event) => {
   if (invalid) {
     window.postMessage(
       {
-        source: 'PATHIK_CS_TO_INJECTED',
+        source: 'FA_CS_TO_INJECTED',
         id,
         success: false,
         error: `"${invalid.value}" is not a valid option for "${invalid.field}"`,
@@ -56,7 +56,7 @@ window.addEventListener('message', async (event) => {
 
   window.postMessage(
     {
-      source: 'PATHIK_CS_TO_INJECTED',
+      source: 'FA_CS_TO_INJECTED',
       id,
       success: response?.success ?? false,
       error: response?.error ?? null,
@@ -315,9 +315,9 @@ async function fillForm(data) {
 // --- Toast ---
 
 function showToast(msg) {
-  document.querySelector('.pathik-toast')?.remove();
+  document.querySelector('.form-autofill-toast')?.remove();
   const toast = document.createElement('div');
-  toast.className = 'pathik-toast';
+  toast.className = 'form-autofill-toast';
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2500);

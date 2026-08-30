@@ -1,4 +1,4 @@
-const SITES_KEY = "pathik_allowed_sites";
+const SITES_KEY = "form_autofill_allowed_sites";
 const DEFAULT_SITES = ["pathik.guru"];
 
 // --- Tab navigation ---
@@ -130,7 +130,7 @@ getSites().then(renderSites);
 
 // --- General tab: Test Data ---
 
-const STORAGE_KEY  = "pathik_entries";
+const STORAGE_KEY  = "form_autofill_entries";
 const MAX_ENTRIES  = 5;
 
 const SAMPLE_GUESTS = [
@@ -260,12 +260,25 @@ async function renderEntries() {
     const fieldsEl = document.createElement("div");
     fieldsEl.className = "entry-fields";
 
+    const SKIP_DISPLAY = new Set(["other_guests", "action", "_savedAt"]);
+
     for (const [key, fieldLabel] of Object.entries(FIELD_LABELS)) {
       const val = entry[key];
       if (val === undefined || val === null || val === "") continue;
       const f = document.createElement("div");
       f.className = "entry-field";
       f.innerHTML = `<span class="field-label">${escapeHtml(fieldLabel)}</span><span class="field-value">${escapeHtml(String(val))}</span>`;
+      fieldsEl.appendChild(f);
+    }
+
+    // Render any extra fields present in the entry that FIELD_LABELS doesn't cover
+    for (const [key, val] of Object.entries(entry)) {
+      if (FIELD_LABELS[key] !== undefined || SKIP_DISPLAY.has(key)) continue;
+      if (val === undefined || val === null || val === "") continue;
+      const label = key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const f = document.createElement("div");
+      f.className = "entry-field";
+      f.innerHTML = `<span class="field-label">${escapeHtml(label)}</span><span class="field-value">${escapeHtml(String(val))}</span>`;
       fieldsEl.appendChild(f);
     }
 

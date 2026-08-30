@@ -1,9 +1,9 @@
-const STORAGE_KEY   = "pathik_entries";
-const SITES_KEY     = "pathik_allowed_sites";
+const STORAGE_KEY   = "form_autofill_entries";
+const SITES_KEY     = "form_autofill_allowed_sites";
 const MAX_ENTRIES   = 5;
 const DEFAULT_SITES = ["pathik.guru", "localhost"];
-const PARENT_ID     = "pathik_autofill";
-const ENTRY_PREFIX  = "pathik_entry_";
+const PARENT_ID     = "form_autofill";
+const ENTRY_PREFIX  = "form_autofill_entry_";
 
 // ── Initialization ────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ async function rebuildFullMenu() {
 
   if (displayed.length === 0) {
     chrome.contextMenus.create(
-      { id: "pathik_empty", parentId: PARENT_ID, title: "No saved entries", enabled: false, contexts: ["all"] },
+      { id: "form_autofill_empty", parentId: PARENT_ID, title: "No saved entries", enabled: false, contexts: ["all"] },
       () => { if (chrome.runtime.lastError) {} }
     );
   } else {
@@ -78,12 +78,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
       await chrome.tabs.sendMessage(tab.id, { type: "FILL_FORM", entry });
     } catch (err) {
-      console.error("Pathik Autofill: could not reach content script", err);
+      console.error("Form Autofill: could not reach content script", err);
     }
   }
 });
 
-// ── Message handler (window.pathikAutofill bridge + options page) ─────────────
+// ── Message handler (window.formAutofill bridge + options page) ───────────────
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleMessage(message)

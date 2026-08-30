@@ -1,13 +1,13 @@
-// Runs in the page's MAIN world — exposes window.pathikAutofill
+// Runs in the page's MAIN world — exposes window.formAutofill
 (function () {
-  if (window.pathikAutofill) return;
+  if (window.formAutofill) return;
 
   const pendingRequests = new Map();
   let _counter = 0;
 
   window.addEventListener("message", (event) => {
     if (event.source !== window) return;
-    if (event.data?.source !== "PATHIK_CS_TO_INJECTED") return;
+    if (event.data?.source !== "FA_CS_TO_INJECTED") return;
 
     const { id, success, error } = event.data;
     const pending = pendingRequests.get(id);
@@ -21,15 +21,15 @@
     }
   });
 
-  window.pathikAutofill = function (options) {
+  window.formAutofill = function (options) {
     return new Promise((resolve, reject) => {
-      const id = `pathik_${++_counter}_${Date.now()}`;
+      const id = `fa_${++_counter}_${Date.now()}`;
       pendingRequests.set(id, { resolve, reject });
 
       const timer = setTimeout(() => {
         if (pendingRequests.has(id)) {
           pendingRequests.delete(id);
-          reject(new Error("Pathik Autofill: request timed out"));
+          reject(new Error("Form Autofill: request timed out"));
         }
       }, 10000);
 
@@ -43,7 +43,7 @@
 
       window.postMessage(
         {
-          source: "PATHIK_INJECTED_TO_CS",
+          source: "FA_INJECTED_TO_CS",
           type: "SAVE_ENTRY",
           id,
           data: options?.data ?? options,
@@ -53,13 +53,13 @@
     });
   };
 
-  window.pathikAutofill.getEntries = function () {
+  window.formAutofill.getEntries = function () {
     return new Promise((resolve, reject) => {
-      const id = `pathik_${++_counter}_${Date.now()}`;
+      const id = `fa_${++_counter}_${Date.now()}`;
       const timer = setTimeout(() => {
         if (pendingRequests.has(id)) {
           pendingRequests.delete(id);
-          reject(new Error("Pathik Autofill: getEntries timed out"));
+          reject(new Error("Form Autofill: getEntries timed out"));
         }
       }, 5000);
       pendingRequests.set(id, {
@@ -67,12 +67,12 @@
         reject:  (e) => { clearTimeout(timer); reject(e); },
       });
       window.postMessage(
-        { source: "PATHIK_INJECTED_TO_CS", type: "GET_ENTRIES", id },
+        { source: "FA_INJECTED_TO_CS", type: "GET_ENTRIES", id },
         location.origin
       );
     });
   };
 
-  window.pathikAutofill.version = "1.0.0";
-  window.pathikAutofill.isInstalled = true;
+  window.formAutofill.version = "1.0.0";
+  window.formAutofill.isInstalled = true;
 })();
