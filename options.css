@@ -407,6 +407,22 @@ a:hover { text-decoration: underline; }
   color: var(--text-muted);
 }
 
+.btn-entry-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+  opacity: 0;
+}
+.entry-row:hover .btn-entry-delete { opacity: 1; }
+.btn-entry-delete:hover { color: var(--danger); background: rgba(224, 82, 82, 0.12); }
+
 .entry-chevron {
   font-size: 14px;
   color: var(--text-muted);

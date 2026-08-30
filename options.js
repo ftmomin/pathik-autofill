@@ -252,7 +252,27 @@ async function renderEntries() {
     row.innerHTML = `
       <span class="entry-name">${escapeHtml(name)}</span>
       <span class="entry-date">Check-in: ${escapeHtml(entry.checkin_date ?? "—")}</span>
+      <button class="btn-entry-delete" title="Delete entry" aria-label="Delete ${escapeHtml(name)}">✕</button>
       <span class="entry-chevron">›</span>`;
+
+    row.querySelector(".btn-entry-delete").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const r2 = await chrome.storage.local.get(STORAGE_KEY);
+      const s2  = r2[STORAGE_KEY] ?? { buffer: [], head: 0, count: 0 };
+      const remaining = Array.from({ length: s2.count }, (_, j) => {
+        const bufIdx = (s2.head - s2.count + j + MAX_ENTRIES) % MAX_ENTRIES;
+        return s2.buffer[bufIdx];
+      }).filter((_, j) => j !== i);
+      await chrome.storage.local.set({
+        [STORAGE_KEY]: {
+          buffer: remaining,
+          head:   remaining.length % MAX_ENTRIES,
+          count:  remaining.length,
+        },
+      });
+      showTestStatus("Entry deleted.");
+      renderEntries();
+    });
 
     const details = document.createElement("div");
     details.className = "entry-details";

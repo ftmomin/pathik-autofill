@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Form FillBridge",
   "version": "1.0.0",
-  "description": "Auto-fill guest registration forms on pathik.guru. Manage allowed sites in settings.",
+  "description": "Auto-fill forms on any configured site. Manage allowed sites in settings.",
   "permissions": ["storage", "contextMenus", "activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "options_ui": {
